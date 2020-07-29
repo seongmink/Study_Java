@@ -576,7 +576,71 @@ BufferedReader br = new BufferedReader(reader);
 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 ```
 
+- ### 문자 변환 보조 스트림
 
+  소스 스트림이 바이트 기반 스트림(InputStream, OutputStream, FileInputStream, FileOutputStream)이면서 입출력 데이터가 문자라면 Reader와 Writer로 변환해서 사용하는 것을 고려해야 한다. 그 이유는 Reader와 Writer는 문자 단위로 입출력하기 때문에 바이트 기반 스트림보다는 편리하고, 문자셋의 종류를 지정할 수 있기 때문에 다양한 문자를 입출력할 수 있다.
+
+  - #### InputStreamReader
+
+    InputStreamReader는 바이트 입력 스트림에 연결되어 문자 입력 스트림인 Reader로 변환시키는 보조 스트림이다.
+
+    ```java
+    Reader reader = new InputStreamReader(바이트입력스트림);
+    ```
+
+    예를 들어 콘솔 입력을 위한 InputStream을 다음과 같이 Reader 타입으로 변환할 수 있다.
+
+    ```
+    InputStream is = System.in;
+    Reader reader = new InputStreamReader(is);
+    ```
+
+    파일 입력을 위한 FileInputStream도 다음과 같이 Reader 타입으로 변환시킬 수 있다.
+
+    ```java
+    FileInputStream fis = new FileInputStream("C:/Temp/file.txt");
+    Reader reader = new InputStreamReader(fis);
+    ```
+
+  - #### OutputStreamWriter
+
+    OutputStreamWriter는 바이트 출력 스트림에 연결되어 문자 출력 스트림인 Writer로 변환시키는 보조 스트림이다.
+
+    ```java
+    Writer writer = new OutputStreamWriter(바이트출력스트림);
+    ```
+
+    예를 들어 파일 출력을 위한 FileOutputStream을 다음과 같이 Writer 타입으로 변환할 수 있다.
+
+    ```java
+    FileOutputStream fos = new FileOutputStream("C:/Temp/file.txt");
+    Writer writer = new OutputStreamWriter(fos);
+    ```
+
+- ### 성능 향상 보조 스트림
+
+  **프로그램의 실행 성능은 입출력이 가장 늦은 장치를 따라간다.** CPU와 메모리가 아무리 뛰어나도 하드 디스크의 입출력이 늦어지면 프로그램의 실행 성능은 하드 디스크의 처리 속도에 맞춰진다. 네트워크로 데이터를 전송할 때도 마찬가지이다. 프로그램이 입출력 소스와 직접 작업하지 않고 중간에 메모리 버퍼(buffer)와 작업함으로써 실행 성능을 향상시킬 수 있다. 예를 들어 프로그램은 직접 하드 디스크에 데이터를 보내지 않고 메모리 버퍼에 데이터를 보냄으로써 쓰기 속도가 향상된다. 버퍼는 데이터가 쌓이기를 기다렸다가 꽉 차게 되면 데이터를 한꺼번에 하드 디스크로 보냄으로써 출력 횟수를 줄여준다.
+
+  보조 스트림 중에서는 메모리 버퍼를 제공하여 프로그램의 실행 성능을 향상시키는 것들이 있다. 바이트 기반 스트림에는 BufferedInputStream, BufferedOutputStream이 있고, 문자 기반 스트림에는 BufferedReader, BufferedWriter가 있다.
+
+  - #### BufferedInputStream과 BufferedReader
+
+    BufferedInputStream과 BufferedReader는 입력 소스로부터 자신의 내부 버퍼 크기만큼 데이터를 미리 읽고 버퍼에 저장해 둔다. 프로그램은 외부의 입력 소스로부터 직접 읽는 대신 버퍼로부터 읽음으로써 읽기 성능이 향상된다.
+
+    BufferedInputStream과 BufferedReader 보조 스트림은 다음과 같이 생성자의 매개값으로 준 입력 스트림과 연결되어  8192 내부 버퍼 사이즈를 가지게 된다. BufferedInputStream은 최대 8192 바이트가, BufferedReader는 최대 8192 문자가 저장될 수 있다.
+
+    ```java
+    BufferedInputStream bis = new BufferedInputStream(바이트입력스트림);
+    BufferedReader br = new BufferedReader(문자입력스트림);
+    ```
+
+    BufferedReader는 readLine() 메소드를 추가적으로 더 가지고 있는데, 이 메소드를 이용하면 캐리지리턴(\r) 라인피드(\n)로 구분된 행 단위의 문자열을 한꺼번에 읽을 수 있다. 다음 코드는 Enter키를 입력하기 전까지 콘솔에서 입력한 모든 문자열을 한꺼번에 얻는다.
+
+    ```java
+    Reader reader = new InputStreamReader(System.in);
+    BufferedReader br = new BufferedReader(reader);
+    String inputStr = br.readLine();
+    ```
 
 ## 네트워크 기초
 
