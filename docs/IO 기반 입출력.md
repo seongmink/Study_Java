@@ -1,4 +1,4 @@
-# IO 기반 입출력 및 네트워킹
+# IO 기반 입출력 및 네트워킹(1)
 
 ## IO 패키지 소개
 
@@ -642,12 +642,75 @@ BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     String inputStr = br.readLine();
     ```
 
-## 네트워크 기초
+  - #### BufferedOutputStream과 BufferedWriter
 
+    BufferedOutputStream과 BufferedWriter는 프로그램에서 전송한 데이터를 내부 버퍼에 쌓아두었다가 버퍼가 꽉 차면, 버퍼의 모든 데이터를 한꺼번에 보낸다. 프로그램 입장에서 보면 직접 데이터를 보내는 것이 아니라, 메모리 버퍼로 데이터를 고속 전송하기 때문에 실행 성능이 향상되는 효과를 얻게 된다.
 
+    BufferedOutputStream과 BufferedWriter 보조 스트림은 다음과 같이 생성자의 매개값으로 준 출력 스트림과 연결되어 8192 내부 버퍼 사이즈를 가지게 된다. BufferedOutputSteram은 8192 바이트가, BufferedWriter는 8192 문자가 최대 저장될 수 있다.
 
-## TCP 네트워킹
+    ```java
+    BufferedOutputStream bos = new BufferedOutputStream(바이트출력스트림);
+    BufferedWriter bw = new BufferedWriter(문자출력스트림);
+    ```
 
+    데이터를 출력하는 방법은 OutputStream 또는 Writer와 동일하다. 주의할 점은 버퍼가 가득 찼을 때만 출력을 하기 때문에 마지막 데이터 부분이 목적지로 가지 못하고 버퍼에 남아있을 수 있다. 그래서 마지막 출력 작업을 마친 후에는 flush() 메소드를 호출하여 버퍼에서 잔류하고 있는 데이터를 모두 보내도록 해야 한다.
 
+- ### 기본 타입 입출력 보조 스트림
 
-## UDP 네트워킹
+  바이트 스트림은 바이트 단위로 입출력하기 때문에 자바의 기본 데이터 타입인 boolean, char, shor, int, long, float, double 단위로 입출력할 수 없다. 그러나 DataInputStream과 DataOutputStream 보조 스트림을 연결하면 기본 데이터 타입으로 입출력이 가능하다.
+
+  ```java
+  DataInputStream dis = new DataInputStream(바이트입력스트림);
+  DataoutputStream dos =  new DataOutputStream(바이트출력스트림);
+  ```
+
+  | DataInputStream |               | **DataOutputStream** |                         |
+  | --------------- | ------------- | -------------------- | ----------------------- |
+  | **리턴 타입**   | **메소드**    | **리턴 타입**        | **메소드**              |
+  | boolean         | readBoolean() | void                 | writeBoolean(boolean v) |
+  | byte            | readByte()    | void                 | writeByte(int v)        |
+  | char            | readChar()    | void                 | writeChar(int v)        |
+  | double          | readDouble()  | void                 | writeDouble(double v)   |
+  | float           | readFloat()   | void                 | writeFloat(float v)     |
+  | int             | readInt()     | void                 | writeInt(int v)         |
+  | long            | readLong()    | void                 | writeLong(long v)       |
+  | short           | readShort()   | void                 | writeShort(int v)       |
+  | String          | readUTF()     | void                 | writeUTF(String str)    |
+
+  데이터 타입의 크기가 모두 다르므로 DataOutputStream으로 출력한 데이터를 다시 DataInputStream으로 읽어올 때는 출력한 순서와 동일한 순서로 읽어야 한다. 예를 들어 출력할 때의 순서가 int -> boolean-> double이라면 읽을 때의 순서도 int -> boolean -> double이어야 한다.
+
+- ### 프린터 보조 스트림
+
+  PrintStream과 PrintWriter는 프린터와 유사하게 출력하는 print(), println() 메소드를 가지고 있는 보조 스트림이다. PrintStream은 바이트 출력 스트림과 연결되고, PrintWriter는 문자 출력 스트림과 연결된다.
+
+  ```java
+  PrintStream ps = new PrintStream(바이트출력스트림);
+  PrintWriter pw = new PrintWriter(문자출력스트림);
+  ```
+
+  PrintStream과 PrintWriter는 println()과 print() 이외에 printf()도 제공한다. printf() 메소드는 형식화된 문자열(format string)을 출력할 수 있도록 하기 위해 자바 5부터 추가된 메소드이다.
+
+  | 분류     | 형식화된 문자                                                | 설명                                                         | 출력형태                                                     |
+  | -------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+  | 정수     | %d<br />%6d<br />%-6d<br />%06d                              | 정수<br />6자리 장수, 왼쪽빈자리 공백<br />6자리 정수, 오른쪽 빈자리 공백<br />6자리 정수, 왼쪽 빈자리 0채움 | 123<br />\_\_\_123<br />123\_\_\_<br />000123                |
+  | 실수     | %10.2f<br />%-10.2f<br />%010.2f                             | 소수점 이상 7자리, 소수점 이하 2자리. 왼쪽 빈자리 공백<br />소수점 이상 7자리, 소수점 이하 2자리. 오른쪽 빈자리 공백<br />소수점 이상 7자리, 소수점 이하 2자리. 왼쪽 빈자리 0채움 | \_\_\_\_123.45<br />123.45\_\__\_<br />0000123.45            |
+  | 문자열   | %s<br />%6s<br />%-6s                                        | 문자열<br />6자리 문자열, 왼쪽 빈자리 공백<br />6자리 문자열. 오른쪽 빈자리 공백 | abc<br />\_\_\_abc<br />abc\_\_\_                            |
+  | 날짜     | %tF<br />%tY<br />%ty<br />%tm<br />%td<br />%tH<br />%tl<br />%tM<br />%tS | %tY-%tm-%td<br />4자리 년<br />2자리 년<br />2자리 월<br />2자리 일<br />2자리 시(0 ~ 23)<br />시(0 ~12)<br />2자리 분<br />2자리 초 | 2010-01-06<br />2010<br />10<br />01<br />06<br />08<br />8<br />06<br />24 |
+  | 특수문자 | \t<br />\h<br />%%                                           | 탭(tab)<br />줄바꿈<br />%                                   | <br /><br />%                                                |
+
+- ### 객체 입출력 보조 스트림
+
+  자바는 메모리에 생성된 객체를 파일 또는 네트워크로 출력할 수 있다. 객체는 문자가 아니기 때문에 바이트 기반 스트림으로 출력해야 한다. 객체를 출력하기 위해서는 객체의 데이터(필드값)를 일렬로 늘어선 연속적인 바이트로 변경해야 하는데, 이것을 **객체 직렬화**(serialization)라고 한다. 반대로 파일에 저장되어 있거나 네트워크에서 전송된 객체를 읽을 수도 있는데, 입력 스트림으로부터 읽어들인 연속적인 바이트를 객체로 복원하는 것을 **역직렬화**(deserialization)라고 한다.
+
+  - #### ObjectInputStream, ObjectOutputStream
+
+    자바는 객체를 입출력할 수 있는 두 개의 보조 스트림인 ObjectInputStream과 ObjectOutputStream을 제공한다. ObjectOutputStream은 바이트 출력 스트림과 연결되어 객체를 직렬화 하는 역할을 하고, ObjectInputStream은 바이트 입력 스트림과 연결되어 객체로 역직렬화하는 역할을 한다.
+
+    ObjectInputSteram과 OutputStream은 다른 보조 스틀미과 마찬가지로 연결할 바이트 입출력 스트림을 생성자의 매개값으로 받는다.
+
+    ```java
+    ObjectInputStream ois = new ObjectInputStream(바이트입력스트림);
+    ObjectOutputStream oos = new ObjectOutputStream(바이트출력스트림);
+    ```
+
+    
