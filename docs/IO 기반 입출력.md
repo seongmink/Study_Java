@@ -1,4 +1,4 @@
-# IO 기반 입출력 및 네트워킹(1)
+# IO 기반 입출력
 
 ## IO 패키지 소개
 
@@ -713,4 +713,77 @@ BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     ObjectOutputStream oos = new ObjectOutputStream(바이트출력스트림);
     ```
 
+    ObjectOutputStream으로 객체를 직렬화하기 위해서는 writeObject() 메소드를 사용한다
     
+    ```java
+    oos.writeObject(객체);
+    ```
+    
+    반대로 ObjectInputStream의 readObject() 메소드는 입력 스트림에서 읽은 바이트를 역직렬화해서 객체로 생성한다. readObject() 메소드의 리턴타입은 Object 타입이기 때문에 객체 원래의 타입으로 변환해야 한다.
+    
+    ```java
+    객체타입 변수 = (객체타입) ois.readObject();
+    ```
+    
+  - #### 직렬화가 가능한 클래스(Serializable)
+
+    자바는 Serializable 인터페이스를 구현한 클래스만 직렬화할 수 있도록 제한하고 있다. Serializable 인터페이스는 필드나 메소드가 없는 빈 인터페이스이지만, 객체를 직렬화할 때 private 필드를 포함한 모든 필드를 바이트로 변환해도 좋다는 표시 역할을 한다.
+
+    ```java
+    public class XXX implements Serializable { }
+    ```
+
+    객체를 직렬화하면 바이트로 변환되는 것은 필드들이고, **생성자 및 메소드는 직렬화에 포함되지 않는다.** 따라서 역직렬화할 때에는 필드의 값만 복원된다. 하지만 모든 필드가 직렬화 대상이 되는 것은 아니다. **필드 선언에 static 또는 transient가 붙어 있을 경우에는 직렬화가 되지 않는다.**
+    
+    ```java
+    public class XXX implements Serializable {
+        public static int field1;
+        transient int field2;
+    }
+    ```
+    
+  - #### serialVersionUID 필드
+
+    직렬화로딘 객체를 역직렬화할 때는 직렬화했을 때와 같은 클래스를 사용해야 한다. 클래스의 이름이 같더라도 클래스의 내용이 변경되면, 역직렬화는 실패하며 java.io.InvalidClassException 예외가 발생한다.
+
+    serialVersionUID는 같은 클래스임을 알려주는 식별자 역할을 하는데, Serializable 인터페이스를 구현한 클래스를 컴파일하면 자동적으로 serialVersionUID 정적 필드가 추가된다. 문제는 클래스를 재컴파일하면 seriialVerisonUID의 값이 달라진다는 것이다. 네트워크로 객체를 직렬화하여 전송하는 경우, 보내는 쪽과 받는 쪽이 모두 같은 serialVersionUID를 갖는 클래스를 가지고 있어야 하는데 한 쪽에서 클래스를 변경해서 재컴파일하면 다른 serialVersionUID를 가지게되므로 역직렬화에 실패하게 된다.
+
+    만약 불가피하게 클래스의 수정이 필요하다면 클래스 작성 시 다음과 같이 serialVersionUID를 명시적으로 선언하면 된다.
+
+    ```java
+    public calss XXX implements Serializable {
+        static final long serialVersionUID = 정수값;
+        ...
+    }
+    ```
+
+    클래스에 serialVersionUID가 명시적으로 선언되어 있으면 컴파일 시에 serialVersionUID 필드가 추가되지 않기 때문에 동일한 serialVersionUID 값을 유지할 수 있다.
+
+  - #### writeObject()와 readObject() 메소드
+
+    부모 클래스가 Serializable 인터페이스를 구현하고 있으면 자식 클래스는 Seralizable 인터페이스를 구현하지 않아도 자식 객체를 직렬화하면 부모 필드 및 자식 필드가 모두 직렬화 된다. 하지만 그 반대로 자식 클래스만 Serializable 인터페이스를 궇녀하고 있따면 자식 객체를 직렬화할 때 부모의 필드는 직렬화에서 제외된다. 이 경우 부모 클래스의 필드를 직렬화하고 싶다면 다음 두 가지 방법 중 하나를 선택해야 한다.
+
+    - 부모 클래스가 Serializable 인터페이스를 구현하도록 한다.
+    - 자식 클래스에서 writeObject()와 readObject() 메소드를 선언해서 부모 객체의 필드를 직접 출력시킨다.
+
+    첫 번째 방법이 제일 좋은 방법이 되겠지만, 부모 클래스의 소스를 수정할 수 없는 경우에는 두 번째 방법을 사용해야 한다.
+
+    writeObject() 메소드는 직렬화될 때 자동으로 호출되고, readObject() 메소드는 역직렬화될 때 자동으로 호출된다.
+
+    ```java
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeXXX(부모필드); // 부모 객체의 필드값을 출력함
+        ...
+        out.defaultWriteObject(); // 자식 객체의 필드값을 직렬화
+    }
+    ```
+
+    ```java
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        부모필드 = in.readXXX(); // 부모 객체의 필드값을 읽어옴
+        ...
+        in.defaultReadObject(); // 자식 객체의 필드값을 역직렬화
+    }
+    ```
+
+    두 메소드를 작성할 때 주의할 점은 접근 제한자가 private가 아니면 자동 호출되지 않기 때문에 **반드시 private를 붙여주어야 한다.** writeObject()와 readObject() 메소드의 매개값인 ObjectOutputSteram과 ObjectInputStream은 다양한 종류의 writeXXX(), readXXX() 메소드를 제공하므로 부모 필드 타입에 맞는 것을 선택해서 사용하면 된다. defaultWriteObject()와 defaultReadObject()는 자식 클래스에 정의된 필드들을 모두 직렬화하고 역직렬화 한다.
